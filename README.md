@@ -1,5 +1,13 @@
 # Customer Segmentation and Predictive Analysis
 
+## How to run
+
+1. **Download the Repository**: Clone or download the repository from GitHub to your local machine.
+
+2. **Install Requirements**: Navigate to the directory where the repository is located using a command line interface. Then run `pip install -r requirements.txt` to install the required Python packages listed in `requirements.txt`.
+
+3. **Run the Main Script**: Execute the main script of the project by running `python main.py` from the command line while in the repository directory.
+
 ## Motivation
 The motivation behind this project is to apply machine learning and data analysis techniques to understand customers behaviour better. This was done by segmenting customers into meaningful groups, understanding each customer clusters (3 in total), and predicting customer responses to the latest marketing campaign based on those clusters.
 
