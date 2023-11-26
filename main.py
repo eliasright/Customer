@@ -4,7 +4,7 @@ from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.cluster import KMeans
-import time
+import random
 import numpy as np
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
@@ -19,10 +19,12 @@ import pandas as pd
 import warnings
 from sklearn.impute import KNNImputer
 from sklearn.preprocessing import StandardScaler
-from imblearn.over_sampling import SMOTE
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, classification_report
 import xgboost as xgb
+from imblearn.over_sampling import SMOTE
+from imblearn.under_sampling import RandomUnderSampler
+from imblearn.pipeline import Pipeline
 
 #####################################
 ################ MAIN ###############
@@ -43,21 +45,21 @@ def main():
     rename(df)
 
     # Optional: Uncomment to view an overview of the customer data
-    data_overview(df)
+    # data_overview(df)
 
     # Transform the user data for clustering (Data prep)
     # 'df_Transform': Data transformed for clustering (campaign data dropped and standardized)
     # 'df_New': Data transformed without dropping campaign data and without standardization
     # 'df_Predict': Data transformed for prediction (includes campaign data and standardized)
     df_Transform = transform_customer_data(df, dropCampaign=True, standardizeIt=True, printIt=False)
-    df_New = transform_customer_data(df, dropCampaign=False, standardizeIt=False, printIt=False)
+    # df_New = transform_customer_data(df, dropCampaign=False, standardizeIt=False, printIt=False)
     df_Predict = transform_customer_data(df, dropCampaign=False, standardizeIt=True, printIt=False)
 
     # Perform customer segmentation using clustering
-    labels = customer_segmentation(df_Transform=df_Transform, graphIt=True)
+    labels = customer_segmentation(df_Transform=df_Transform, graphIt=False)
 
     # Profile customers based on clustering results
-    customer_profile(df=df_New, df_Transform=df_Transform, labels=labels)
+    # customer_profile(df=df_New, df_Transform=df_Transform, labels=labels)
 
     # Predict customer responses using machine learning models
     customer_prediction(df=df_Predict, labels=labels)
@@ -315,11 +317,11 @@ def transform_customer_data(df_original, dropCampaign=False, standardizeIt=False
 
     # Convert 'Dt_Customer' to datetime and compute membership length
     df['Dt_Customer'] = pd.to_datetime(df['Dt_Customer'], format='%d-%m-%Y')
-    max_new_date = (df['Dt_Customer'] + pd.to_timedelta(df['Recency'], unit='D')).max()
-    df["Membership Length"] = (max_new_date - df['Dt_Customer']).dt.days
+    min_new_date = (df['Dt_Customer'] + pd.to_timedelta(df['Recency'], unit='D')).max()
+    df["Membership Length"] = (min_new_date - df['Dt_Customer']).dt.days
 
     # Add a new 'Age' column
-    df["Age"] = max_new_date.year - df["Year_Birth"]
+    df["Age"] = min_new_date.year - df["Year_Birth"]
 
     # One-hot encoding for 'Education' and 'Marital_Status'
     df = pd.concat([df, pd.get_dummies(df['Education'], prefix='Edu', prefix_sep=' ')], axis=1)
@@ -371,7 +373,6 @@ def transform_customer_data(df_original, dropCampaign=False, standardizeIt=False
         df[columns_to_standardize] = scaler.fit_transform(df[columns_to_standardize])
 
     return df
-
 
 def remove_duplicates(input_df):
     """
@@ -498,7 +499,7 @@ def plot_elbow_graph(K, distortions, knee_point):
     # Highlighting and annotating the elbow point
     plt.axvline(x=knee_point, color='red', linestyle='--', linewidth=2)
     plt.text(knee_point, max(distortions), f'Optimal N: {knee_point}', horizontalalignment='right', color='red', fontsize=12)
-    plt.title('Elbow Method For Optimal N with Rate of Change')
+    plt.title('Elbow Method For Optimal K with Rate of Change')
     plt.show()
 
 def calculate_pca_variance(df):
@@ -566,7 +567,6 @@ def customer_profile(df, df_Transform, labels):
     The function generates visualizations for income, spending, age, education,
     marital status, parental status, and response to campaigns for different clusters.
     """
-
     # Visualize clusters in 3D space
     cluster_plot(df_Transform, labels)
 
@@ -577,6 +577,9 @@ def customer_profile(df, df_Transform, labels):
 
     # Compare age distribution across clusters
     box_whisker_plot(df, labels, 'Age')
+
+    # Membership Length
+    box_whisker_plot(df, labels, 'Membership Length')
 
     # Compare education levels across clusters
     education_categories = ['Edu 2n Cycle', 'Edu Basic', 'Edu Graduation', 'Edu Master', 'Edu PhD']
@@ -867,21 +870,19 @@ def customer_prediction_per_label(df, labels):
     # Perform prediction and evaluate model for each label
     for label in unique_labels:
         df_subset = df[labels_series == label]
-        y_test, predictions = customer_prediction_XGBOOST(df_subset, target_column='Latest Campaign', useSmote=True)
+        y_test, predictions = customer_prediction_XGBOOST(df_subset, target_column='Latest Campaign')
         metrics = evaluate_model(y_test, predictions)
         metrics_per_label[label] = metrics
 
     return metrics_per_label
 
-def customer_prediction_XGBOOST(df, target_column='Latest Campaign', useSmote=False):
+def customer_prediction_XGBOOST(df, target_column='Latest Campaign'):
     """
     Performs customer prediction using an XGBoost classifier. 
-    It allows the option to use SMOTE (Synthetic Minority Over-sampling Technique) for balancing the dataset.
 
     Args:
     df (DataFrame): The DataFrame containing the dataset for prediction.
     target_column (str, optional): The name of the target column. Defaults to 'Latest Campaign'.
-    useSmote (bool, optional): Flag to indicate whether to use SMOTE for balancing the dataset. Defaults to False.
 
     Returns:
     tuple: A tuple containing the actual values of the test set (y_test) and the predictions made by the model.
@@ -891,33 +892,14 @@ def customer_prediction_XGBOOST(df, target_column='Latest Campaign', useSmote=Fa
     X = df.drop(target_column, axis=1)
     y = df[target_column]
 
-    if useSmote:
-        # Applying SMOTE for balancing the dataset
-        smote = SMOTE(random_state=42)
-        X, y = smote.fit_resample(X, y)
-    else:
-        # Combining features and target for undersampling process
-        data = pd.concat([X, y], axis=1)
+    # Define SMOTE for over-sampling
+    smote = SMOTE(random_state=1221)
 
-        # Separating the dataset into majority and minority classes
-        majority_class = data[data[target_column] == 0]
-        minority_class = data[data[target_column] == 1]
-
-        # Performing undersampling on the majority class
-        majority_class_undersampled = resample(majority_class, 
-                                               replace=False, 
-                                               n_samples=len(minority_class), 
-                                               random_state=42)
-
-        # Combining the undersampled majority class with the minority class
-        data = pd.concat([majority_class_undersampled, minority_class])
-
-        # Re-separating features and target
-        X = data.drop(target_column, axis=1)
-        y = data[target_column]
+    # Apply the pipeline to your features (X) and target (y)
+    X, y = smote.fit_resample(X, y)
 
     # Splitting the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=1221)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1221)
 
     # Initializing the XGBoost classifier
     model = xgb.XGBClassifier(use_label_encoder=False, eval_metric='logloss')
@@ -929,7 +911,6 @@ def customer_prediction_XGBOOST(df, target_column='Latest Campaign', useSmote=Fa
     predictions = model.predict(X_test)
 
     return y_test, predictions
-
 
 def evaluate_model(y_true, y_pred):
     """
@@ -977,14 +958,16 @@ def plot_evaluation_metrics(metrics_without_labels, metrics_with_labels, metrics
     metric_names = list(metrics_without_labels.keys())[:-1]  # Exclude the classification report
     values_without_labels = [metrics_without_labels[name] for name in metric_names]
     values_with_labels = [metrics_with_labels[name] for name in metric_names]
+
+    # Sort values_per_label by cluster number
     values_per_label = {cluster: [metrics[name] for name in metric_names] 
-                        for cluster, metrics in metrics_per_label.items()}
+                        for cluster, metrics in sorted(metrics_per_label.items())}
 
     # Setting up the bar plot
     n_groups = len(metric_names)
     bar_width = 0.15
     fig, ax = plt.subplots(figsize=(12, 8))
-    colors = ['purple', 'yellow', 'green']  # Custom colors for clusters
+    colors = ['purple', 'green', 'yellow']  # Custom colors for clusters
 
     # Helper function to plot bars
     def plot_bars(values, positions, label, color=None):
@@ -1021,6 +1004,8 @@ def plot_evaluation_metrics(metrics_without_labels, metrics_with_labels, metrics
 #######################################
 
 if __name__ == "__main__":
+    random.seed(1221)
+
     # Filter out FutureWarnings
     warnings.simplefilter(action='ignore', category=FutureWarning)
 
