@@ -37,8 +37,8 @@ The motivation behind this project is to apply machine learning and data analysi
 ### Summary of Findings
 
 - Identified three unique customer segments with distinct characteristics.
-- Customized marketing strategies based on segmentation can significantly improve campaign effectiveness.
-- Predictive modeling provides insights into the responsiveness of different customer groups, guiding targeted marketing efforts.
+- Most decisive differences between customer were income, spending, and age.
+- Recall is improved when predicting customer response to a campaign by separating into customer clusters. Though not by much.
 
 ## 1. Data Overview and Preprocessing 
 
@@ -119,7 +119,7 @@ The dataset had a minimal number of missing entries, with only 24 fields in the 
 
 The dataset contained 174 "pure duplication groups", where each group contains instances with identical values across all features except the ID. One instance from each group was retained, although it doesn't matter, based on those that appear first in the dataset. 
 
-Further scrutiny revealed another set of duplicate groups differing only by feature "Latest Campaign". Latest Campaign is a binary feature which indicates whether a customer has responded or interacted with the last campaign by the company. To maintain the most current data, from each duplication group the entry with a Latest Campaign value of 1 were kept. (Assuming 0 were not yet updated for that duplicated "pure duplication" instance). 
+Further inspection revealed another set of duplicate groups differing only by feature "Latest Campaign". Latest Campaign is a binary feature which indicates whether a customer has responded or interacted with the last campaign by the company. To maintain the most current data, from each duplication group the entry with a Latest Campaign value of 1 were kept. (Assuming 0 were not yet updated for that duplicated "pure duplication" instance). 
 
 ![Duplicate Values](https://github.com/eliasright/Customer/assets/151723828/3cec6824-e8d4-4aab-90a6-ad07281c2958)
 
@@ -308,7 +308,7 @@ Dataset 3 (3 tables)
    - **Number of 1's:** 83
      
 ### C. Model Selection and Evaluation
-Choosing XGBoost for our analysis was strategic, particularly due to its renowned efficiency in situations requiring minimal hyperparameter tuning. This aspect of XGBoost is crucial in our context, where the goal is to ascertain the impact of clustering on the predictive model's performance in response to an unseen feature like the "Latest Campaign". XGBoost's ability to deliver high performance with less need for hyperparameter optimization makes it exceptionally suitable for quickly establishing a robust and reliable baseline model. In our case, this means being able to accurately assess the effectiveness of customer segmentation (clustering) without the extensive calibration often required by other algorithms.
+XGBoost was chosen particularly for its efficiency in situations requiring minimal hyperparameter tuning. This aspect of XGBoost is crucial in this context, where the goal is to ascertain the impact of clustering on the predictive model's performance in response to an unseen feature like the "Latest Campaign". XGBoost's ability to deliver high performance with less need for hyperparameter optimization makes it suitable for quickly establishing a reliable baseline model. In our case, this means being able to accurately assess the effectiveness of customer segmentation (clustering) without the extensive calibration often required by other algorithms.
 
 ### D. Results
 
