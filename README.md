@@ -4,9 +4,9 @@
 
 1. **Download the Repository**: Clone or download the repository from GitHub to your local machine.
 
-2. **Install Requirements**: Navigate to the directory where the repository is located using a command line interface. Then run `pip install -r requirements.txt` to install the required Python packages listed in `requirements.txt`.
+2. **Install Requirements**: Run `pip install -r requirements.txt` to install the required Python packages listed in `requirements.txt`.
 
-3. **Run the Main Script**: Execute the main script of the project by running `python main.py` from the command line while in the repository directory.
+3. **Run the Main Script**: Execute the main script of the project by running `python main.py`.
 
 ## Motivation
 The motivation behind this project is to apply machine learning and data analysis techniques to understand customers behaviour better. This was done by segmenting customers into meaningful groups, understanding each customer clusters (3 in total), and predicting customer responses to the latest marketing campaign based on those clusters.
@@ -39,6 +39,7 @@ The motivation behind this project is to apply machine learning and data analysi
 - Identified three unique customer segments with distinct characteristics.
 - Most decisive differences between customer were income, spending, and age.
 - Recall is improved when predicting customer response to a campaign by separating into customer clusters. Though not by much.
+- There could be a benefit from using KNN or a clustering method to first assign a customer into a cluster before predicting customer's response to a campaign.
 
 ## 1. Data Overview and Preprocessing 
 
@@ -117,9 +118,7 @@ The dataset had a minimal number of missing entries, with only 24 fields in the 
 
 #### D. Duplicate Values
 
-The dataset contained 174 "pure duplication groups", where each group contains instances with identical values across all features except the ID. One instance from each group was retained, although it doesn't matter, based on those that appear first in the dataset. 
-
-Further inspection revealed another set of duplicate groups differing only by feature "Latest Campaign". Latest Campaign is a binary feature which indicates whether a customer has responded or interacted with the last campaign by the company. To maintain the most current data, from each duplication group the entry with a Latest Campaign value of 1 were kept. (Assuming 0 were not yet updated for that duplicated "pure duplication" instance). 
+The dataset contains 174 duplication groups. Each groups have the same values. Only 1 record were kept from these groups. Through further inspection, there exist another duplication groups where the only difference is the feature "Latest Campaign". It is uncertainty why this is the case but most likely those with Latest Campaign as 1 is the most recent record as this is a binary showing if a customer engaged with the last campaign. For all of these groups, I kept only the record with 1. (Assuming 0 were not yet updatet).
 
 ![Duplicate Values](https://github.com/eliasright/Customer/assets/151723828/3cec6824-e8d4-4aab-90a6-ad07281c2958)
 
@@ -131,27 +130,27 @@ Assuming a minimum data recording date based on the "Dt_Customer" (Date customer
 
 #### F. Marital Status Categorical
 
-In the dataset, non-standard inputs such as "Alone", "Absurd", and "YOLO" were classified under marital status. They are considered false data entry, and hence were cleaned by categorizing them as "Single", resulting in a revised set of categories: Married, Together, Single, Divorced, Widow.
+In the marital status there were non-standard inputs such as "Alone", "Absurd", and "YOLO". They are considered false data entry, and hence were cleaned by categorizing them as "Single", resulting in a revised set of categories: Married, Together, Single, Divorced, Widow.
 
 ![Marital Status Distribution](https://github.com/eliasright/Customer/assets/151723828/322694a1-d6bc-49aa-85b6-92e0ff6a13b6)
 
 #### G. Encoding Categorical Data
 
-The "Marital Status" and "Education" categorical data were encoded using One Hot Encoding, with prefixes "Marital" and "Edu", respectively.
+The "Marital Status" and "Education" categorical data were encoded using One Hot Encoding, with prefixes "Marital" and "Edu", respectively. Also dropping the first column since it is redundant.
 
 ![Education Distribution](https://github.com/eliasright/Customer/assets/151723828/24364bcc-f853-4766-9cd9-2b54d246ad32)
 
 #### H. Outliers
 
-For "Income", outliers were addressed differently. Extreme values near the whisker (high end) were retained since it is highly plausible. While an improbable entry (annual salary of $666,666) was adjusted using KNN imputation to a more appropriate value. The instance was not dropped because the other features were not outlier and deemed probable and likely correct.
+For "Income", outliers were addressed differently. Extreme values near the whisker (high end) were retained since it is highly plausible (true outliers). While an improbable entry (annual salary of $666,666) was adjusted using KNN imputation to a more appropriate value. The instance was not dropped because the other features were not outlier and deemed probable and likely correct.
 
 ![Income Outliers](https://github.com/eliasright/Customer/assets/151723828/304977f1-6ebb-426d-b91c-7384c1e5f6a5)
 
-The "Age" outliers, suggesting people over the age of 100 with substantial income, were considered inaccurate and improbable. Even if it was true, it would still be an extreme outlier. The Birth_Year also suggested that 1900 and 1899 were likely a false data entry by the customer. These were also corrected with KNN imputation.
+The "Age" outliers, suggesting people over the age of 100 with substantial income, were considered either inaccurate or just improbable. Even if it was true, it would still be an extreme outlier. The Birth_Year also suggested that 1900 and 1899 were likely a false data entry by the customer. These were also corrected with KNN imputation.
 
 ![Age Outliers](https://github.com/eliasright/Customer/assets/151723828/e00d8293-2620-4acd-9378-b9f425cedd79)
 
-As an additional note, the overall dataset's measures of central tendency and dispersion were reviewed, and no values were deemed outliers based solely on deviation from the norm. These values were collected by the company, hence are likely to be correctly logged (except "Latest Campaign" that was dealth with). The table below shows purchases based on categories and purchasing methods. Nothing notable.
+The overall dataset's measures of central tendency and dispersion were checked, and no values were deemed outliers based solely on deviation from the norm. These values were collected by the company, hence are likely to be correctly logged (except "Latest Campaign" that was dealth with in duplication process). The table below shows purchases based on categories and purchasing methods. Nothing notable.
 
 ![Purchases and Methods Overview](https://github.com/eliasright/Customer/assets/151723828/70a48efe-a552-4bc1-a851-f29598c586b3)
 
@@ -165,23 +164,21 @@ Finally, a standardization process was applied to normalize the feature scales a
 
 ### A. Determining the Optimal Number of Clusters
 
-The process of identifying the optimal number of clusters for segmentation is a critical step. Without domain knowledge, I utilized the Elbow Method. Mathematically determine each points diminishing rate of variance reduction with increasing cluster numbers. This analysis robustly suggests that the optimal number of clusters (K) is three for our customer data. Graph below shows the "Knee Point" and Distortion at each point.
+The process of identifying the optimal number of clusters for segmentation is tricky. Without domain knowledge, I utilized the Elbow Method. Mathematically determine each points diminishing rate of variance reduction with increasing cluster numbers. This analysis robustly suggests that the optimal number of clusters (K) is three for our customer data. Graph below shows the "Knee Point" and Distortion at each point. So 3 was chosen as the number of cluster to investigate.
 
 ![Knee Point Graph](https://github.com/eliasright/Customer/assets/151723828/7a3c9cf5-c25e-4e64-af8b-8cb95e70c024)
 
 ### B. Implementation of K-Means Clustering Algorithm
 
-I used the K-Means clustering algorithm to segment the customer dataset. K-Means is known for its efficiency and clear clustering, making it suitable for processing large data volumes. It helps identify distinct customer groups, which is crucial for targeted marketing strategies.
+I used the K-Means clustering algorithm to segment the customer dataset. K-Means is known for its efficiency and clear clustering, making it suitable for processing large data volumes. It helps identify distinct customer groups.
 
-In the clustering process, I excluded features related to campaign interactions (`Campaign 1` to `Campaign 5` and `Latest Campaign`) to avoid overfitting and bias in predictive modeling. This exclusion ensures the segmentation results are unbiased and the predictions about customer engagement with `Latest Campaigns` are accurate.
+In the clustering process, I excluded features related to campaign interactions (`Campaign 1` to `Campaign 5` and `Latest Campaign`) to avoid overfitting and bias in the predictive modeling. This exclusion ensures the segmentation results are unbiased and the predictions about customer engagement with `Latest Campaigns` are accurate.
 
-To reduce the dataset's dimensionality with minimal information loss, I applied Principal Component Analysis (PCA). I found that seven principal components represent over 70% of the dataset's variability, reducing the original 28 features to seven and simplifying the dataset while preserving its interpretability.
+To reduce the dataset's dimensionality with minimal information loss, I applied Principal Component Analysis (PCA). I found that seven principal components represent over 70% of the dataset's variability, reducing the original 28 features to seven and simplifying the dataset while preserving its interpretability. 
 
 After applying PCA, I used the K-Means algorithm to form three clusters. I then applied PCA again for a three-dimensional visualization of the customer groups, providing a clear and informative view of the clustering.
 
 ![3D Clusters Visualization](https://github.com/eliasright/Customer/assets/151723828/0c6a2920-8cc7-49b7-bf7a-97e5efbddf80)
-
-This approach to segmentation provides valuable insights for developing personalized marketing strategies tailored to each customer segment's specific needs and characteristics.
 
 ## 3. Customer Profiling
 
