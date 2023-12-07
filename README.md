@@ -27,7 +27,7 @@ The motivation behind this project is to apply machine learning and data analysi
 - Method: K-Means clustering, supported by PCA.
 - Result: Identification of three distinct customer groups.
 
-3. [Customer Profiling](#3-customer-profiling)
+### 3. [Customer Profiling](#3-customer-profiling)
 - Analysis: Detailed profiling based on demographics, income, and spending patterns across customer groups.
 
 ### 4. [Predictive Model Analysis](#predictive-model-analysis-for-"latest-campaign")
