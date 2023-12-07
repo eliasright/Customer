@@ -23,11 +23,11 @@ The motivation behind this project is to apply machine learning and data analysi
 - Dataset: 2240 instances, 29 features.
 - Steps: Handling missing values, duplicates, outliers; categorical data encoding; dataset standardization.
 
-### 2. [Customer Segmentation](#customer-segmentation)
+### 2. [Customer Segmentation](#2-customer-segmentation)
 - Method: K-Means clustering, supported by PCA.
 - Result: Identification of three distinct customer groups.
 
-3. [Customer Profiling](#customer-profiling)
+3. [Customer Profiling](#3-customer-profiling)
 - Analysis: Detailed profiling based on demographics, income, and spending patterns across customer groups.
 
 ### 4. [Predictive Model Analysis](#predictive-model-analysis-for-"latest-campaign")
