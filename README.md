@@ -19,18 +19,18 @@ The motivation behind this project is to apply machine learning and data analysi
 
 ## Project Overview
 
-### 1. [Data Overview and Preprocessing](#data-overview-and-preprocessing)
+1. [Data Overview and Preprocessing](#1-data-overview-and-preprocessing)
 - Dataset: 2240 instances, 29 features.
 - Steps: Handling missing values, duplicates, outliers; categorical data encoding; dataset standardization.
 
-### 2. [Customer Segmentation](#2-customer-segmentation)
+2. [Customer Segmentation](#2-customer-segmentation)
 - Method: K-Means clustering, supported by PCA.
 - Result: Identification of three distinct customer groups.
 
-### 3. [Customer Profiling](#3-customer-profiling)
+3. [Customer Profiling](#3-customer-profiling)
 - Analysis: Detailed profiling based on demographics, income, and spending patterns across customer groups.
 
-### 4. [Predictive Model Analysis](#predictive-model-analysis-for-"latest-campaign")
+4. [Predictive Model Analysis](#4-predictive-model-analysis-for-latest-campaign)
 - Approach: XGBoost algorithm for campaign responsiveness.
 - Outcome: Enhanced understanding of varied customer responses to marketing campaigns.
 
